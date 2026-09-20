@@ -23,15 +23,14 @@ export function CreateEventModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Create event"
       className="max-w-xl"
     >
       <EventForm
         initialValues={{
-          startAt: initialStartAt,
-          endAt: initialEndAt,
+          startsAt: initialStartAt,
+          endsAt: initialEndAt,
         }}
-        submitLabel="Create event"
+        submitLabel="Create"
         onSubmit={onSubmit}
         onCancel={onClose}
         isSubmitting={isSubmitting}

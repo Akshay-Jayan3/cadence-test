@@ -4,8 +4,8 @@ import {
 } from 'date-fns'
 
 interface EventPositionParams {
-  startAt: string
-  endAt: string
+  startsAt: string
+  endsAt: string
   day: Date
   startHour: number
   hourHeight: number
@@ -17,14 +17,14 @@ interface EventPosition {
 }
 
 export function getEventPosition({
-  startAt,
-  endAt,
+  startsAt,
+  endsAt,
   day,
   startHour,
   hourHeight,
 }: EventPositionParams): EventPosition | null {
-  const eventStart = parseISO(startAt)
-  const eventEnd = parseISO(endAt)
+  const eventStart = parseISO(startsAt)
+  const eventEnd = parseISO(endsAt)
 
   const dayStart = new Date(day)
   dayStart.setHours(startHour, 0, 0, 0)

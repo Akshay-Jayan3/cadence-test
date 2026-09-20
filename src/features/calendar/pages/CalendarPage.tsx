@@ -101,11 +101,11 @@ export function CalendarPage() {
   ) {
     createEventMutation.mutate({
       ...values,
-      startAt: new Date(
-        values.startAt,
+      startsAt: new Date(
+        values.startsAt,
       ).toISOString(),
-      endAt: new Date(
-        values.endAt,
+      endsAt: new Date(
+        values.endsAt,
       ).toISOString(),
     })
   }
@@ -162,11 +162,11 @@ export function CalendarPage() {
 
     const data: UpdateEventInput = {
       ...values,
-      startAt: new Date(
-        values.startAt,
+      startsAt: new Date(
+        values.startsAt,
       ).toISOString(),
-      endAt: new Date(
-        values.endAt,
+      endsAt: new Date(
+        values.endsAt,
       ).toISOString(),
     }
 
@@ -331,6 +331,7 @@ export function CalendarPage() {
           selectedEvent !== null &&
           !editModalOpen
         }
+        showCloseButton={false}
         onClose={handleEventDetailsClose}
         className="max-w-md"
       >
@@ -340,6 +341,7 @@ export function CalendarPage() {
             onClose={
               handleEventDetailsClose
             }
+            onDelete={handleDeleteEvent}
             onEdit={handleEditEvent}
           />
         )}

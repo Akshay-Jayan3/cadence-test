@@ -15,14 +15,14 @@ export function EventCard({
     <button
       type="button"
       onClick={() => onClick?.(event)}
-      className="h-full w-full overflow-hidden rounded-md border border-black/5 px-2 py-1.5 text-left transition-shadow hover:shadow-sm"
+      className="h-full w-full overflow-hidden rounded-md border-2 px-2 py-1.5 text-left transition-shadow hover:shadow-sm flex flex-col"
       style={{
         backgroundColor: `${event.color}18`,
-        borderColor: `${event.color}45`,
+        borderColor: `${event.color}`,
       }}
     >
       <p
-        className="truncate text-[10px] font-semibold"
+        className="truncate text-[12px] font-semibold"
         style={{ color: event.color }}
       >
         {event.title}
@@ -33,12 +33,12 @@ export function EventCard({
         style={{ color: `${event.color}B3` }}
       >
         {format(
-          parseISO(event.startAt),
+          parseISO(event.startsAt),
           'h:mm a',
         )}
         {' – '}
         {format(
-          parseISO(event.endAt),
+          parseISO(event.endsAt),
           'h:mm a',
         )}
       </p>

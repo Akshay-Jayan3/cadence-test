@@ -46,8 +46,8 @@ export interface Event {
   title: string
   description: string
   location: string
-  startAt: string
-  endAt: string
+  startsAt: string
+  endsAt: string
   color: string
   createdAt: string
   updatedAt: string
@@ -57,8 +57,8 @@ export interface CreateEventInput {
   title: string
   description: string
   location: string
-  startAt: string
-  endAt: string
+  startsAt: string
+  endsAt: string
   color: string
 }
 

@@ -29,34 +29,24 @@ export function EditEventModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Edit event"
       className="max-w-xl"
     >
       <EventForm
         initialValues={{
           title: event.title,
-          startAt: toDateTimeLocalValue(event.startAt),
-          endAt: toDateTimeLocalValue(event.endAt),
+          startsAt: toDateTimeLocalValue(event.startsAt),
+          endsAt: toDateTimeLocalValue(event.endsAt),
           location: event.location,
           description: event.description,
           color: event.color,
         }}
-        submitLabel="Save changes"
+        submitLabel="Save"
         onSubmit={onSubmit}
         onCancel={onClose}
-        isSubmitting={isSubmitting || isDeleting}
+        onDelete={onDelete}
+        isSubmitting={isSubmitting}
+        isDeleting={isDeleting}
       />
-
-      <div className="border-t border-border px-6 py-4">
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={isSubmitting || isDeleting}
-          className="text-body font-medium text-danger hover:underline disabled:opacity-50"
-        >
-          {isDeleting ? 'Deleting...' : 'Delete event'}
-        </button>
-      </div>
     </Modal>
   )
 }

@@ -13,6 +13,7 @@ interface ModalProps {
   title?: string
   description?: string
   className?: string
+  showCloseButton?: boolean
 }
 
 export function Modal({
@@ -22,6 +23,7 @@ export function Modal({
   title,
   description,
   className = '',
+  showCloseButton = true,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const previousActiveElement = useRef<HTMLElement | null>(null)
@@ -48,7 +50,11 @@ export function Modal({
     })
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener(
+        'keydown',
+        handleKeyDown,
+      )
+
       document.body.style.overflow = previousOverflow
 
       previousActiveElement.current?.focus()
@@ -82,12 +88,17 @@ export function Modal({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title ? 'modal-title' : undefined}
+        aria-labelledby={
+          title ? 'modal-title' : undefined
+        }
         aria-describedby={
-          description ? 'modal-description' : undefined
+          description
+            ? 'modal-description'
+            : undefined
         }
         tabIndex={-1}
         className={`
+          relative
           w-full
           rounded-xl
           bg-white
@@ -96,6 +107,35 @@ export function Modal({
           ${className}
         `}
       >
+        {/* Close button */}
+        {showCloseButton && (
+          <button
+            type="button"
+            aria-label="Close modal"
+            onClick={onClose}
+            className="
+              absolute
+              right-5
+              top-5
+              z-10
+              flex
+              size-6
+              items-center
+              justify-center
+              rounded-md
+              text-ink/40
+              transition-colors
+              hover:bg-canvas
+              hover:text-ink
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-primary/30
+            "
+          >
+            <CloseIcon />
+          </button>
+        )}
+
         {(title || description) && (
           <header className="border-b border-border p-6">
             {title && (
@@ -122,5 +162,23 @@ export function Modal({
       </div>
     </div>,
     document.body,
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M6 6l12 12" />
+      <path d="M18 6L6 18" />
+    </svg>
   )
 }

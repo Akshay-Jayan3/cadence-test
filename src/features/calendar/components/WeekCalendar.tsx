@@ -161,7 +161,7 @@ export function WeekCalendar({
               const today = isToday(day)
 
               const dayEvents = events.filter((event) =>
-                isSameDay(parseISO(event.startAt), day),
+                isSameDay(parseISO(event?.startsAt), day),
               )
 
               return (
@@ -214,8 +214,8 @@ export function WeekCalendar({
                   {/* Events */}
                   {dayEvents.map((event) => {
                     const position = getEventPosition({
-                      startAt: event.startAt,
-                      endAt: event.endAt,
+                      startsAt: event.startsAt,
+                      endsAt: event.endsAt,
                       day,
                       startHour,
                       hourHeight,
