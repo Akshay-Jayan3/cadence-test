@@ -27,7 +27,7 @@ export function WeekCalendar({
   events = [],
   startHour = 8,
   endHour = 19,
-  hourHeight = 56,
+  hourHeight = 80,
   onTimeSlotClick,
   onEventClick,
 }: WeekCalendarProps) {
@@ -39,171 +39,227 @@ export function WeekCalendar({
   )
 
   return (
-    <div className="h-[calc(100vh-7rem)] min-h-[600px] overflow-auto bg-canvas px-4 pb-5">
-      <div
-        className="grid min-w-[900px] overflow-hidden rounded-lg border border-border bg-white"
-        style={{
-          gridTemplateColumns: '56px repeat(7, minmax(110px, 1fr))',
-        }}
-      >
-        {/* Empty corner above time labels */}
-        <div className="sticky left-0 top-0 z-30 border-b border-border bg-canvas" />
+    <div className="h-[calc(100vh-8rem)] min-h-[700px] overflow-auto bg-canvas">
+      <div className="min-w-[1360px]">
 
-        {/* Day headers */}
-        {days.map((day) => {
-          const today = isToday(day)
-          const weekend = isWeekend(day)
+        {/* =========================
+            DAY HEADER
+        ========================== */}
 
-          return (
-            <div
-              key={day.toISOString()}
-              className={`
-                sticky top-0 z-20
-                border-b border-l border-border
-                px-2 py-3 text-center
-                ${
-                  today
-                    ? 'bg-primary/[0.035]'
-                    : 'bg-canvas'
-                }
-              `}
-            >
-              <p
-                className={`
-                  text-[8px] font-medium uppercase tracking-wide
-                  ${
-                    today
-                      ? 'text-primary'
-                      : weekend
-                        ? 'text-ink/25'
-                        : 'text-ink/35'
-                  }
-                `}
-              >
-                {format(day, 'EEE')}
-              </p>
+        <div className="ml-[80px] grid grid-cols-7">
+          {days.map((day) => {
+            const today = isToday(day)
+            const weekend = isWeekend(day)
 
+            return (
               <div
-                className={`
-                  mx-auto mt-1 flex size-7 items-center justify-center
-                  rounded-full text-[10px] font-semibold
-                  ${
-                    today
-                      ? 'bg-primary text-white'
-                      : weekend
-                        ? 'text-ink/35'
-                        : 'text-ink/60'
-                  }
-                `}
+                key={day.toISOString()}
+                className="flex h-16 flex-col items-center justify-center"
               >
-                {format(day, 'd')}
-              </div>
-            </div>
-          )
-        })}
+                <p
+                  className={`
+                    text-[8px]
+                    font-medium
+                    uppercase
+                    tracking-wide
+                    ${
+                      today
+                        ? 'text-primary'
+                        : weekend
+                          ? 'text-ink/25'
+                          : 'text-ink/40'
+                    }
+                  `}
+                >
+                  {format(day, 'EEE')}
+                </p>
 
-        {/* Time labels */}
-        <div className="relative bg-white">
-          {hours.map((hour) => (
-            <div
-              key={hour}
-              className="relative border-b border-border"
-              style={{ height: hourHeight }}
-            >
-              <span className="absolute -top-2 right-2 whitespace-nowrap text-[8px] font-medium text-ink/35">
-                {formatHour(hour)}
-              </span>
-            </div>
-          ))}
+                <div
+                  className={`
+                    mt-1
+                    flex
+                    size-7
+                    items-center
+                    justify-center
+                    rounded-full
+                    text-[10px]
+                    font-semibold
+                    ${
+                      today
+                        ? 'bg-primary text-white'
+                        : weekend
+                          ? 'text-ink/35'
+                          : 'text-ink/60'
+                    }
+                  `}
+                >
+                  {format(day, 'd')}
+                </div>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Calendar day columns */}
-        {days.map((day) => {
-          const today = isToday(day)
+        {/* =========================
+            CALENDAR BODY
+        ========================== */}
 
-          const dayEvents = events.filter((event) =>
-            isSameDay(parseISO(event.startAt), day),
-          )
+        <div className="relative">
 
-          return (
-            <div
-              key={day.toISOString()}
-              className={`
-                relative border-l border-border
-                ${
-                  today
-                    ? 'bg-primary/[0.018]'
-                    : 'bg-white'
-                }
-              `}
-            >
-              {/* Time slots */}
-              {hours.map((hour) => (
-                <button
-                  key={hour}
-                  type="button"
-                  aria-label={`Create event on ${format(
-                    day,
-                    'EEEE, MMMM d',
-                  )} at ${formatHour(hour)}`}
+          {/* Hour labels — OUTSIDE the grid */}
+          <div
+            className="
+              pointer-events-none
+              absolute
+              left-0
+              top-0
+              w-[80px]
+            "
+          >
+            {hours.map((hour) => (
+              <div
+                key={hour}
+                className="relative"
+                style={{
+                  height: hourHeight,
+                }}
+              >
+                <span
                   className="
-                    block w-full border-b border-border
-                    text-left transition-colors
-                    hover:bg-primary/[0.025]
+                    absolute
+                    -top-2
+                    right-6
+                    whitespace-nowrap
+                    text-[8px]
+                    font-medium
+                    text-ink/40
                   "
-                  style={{ height: hourHeight }}
-                  onClick={() => {
-                    const slotDate = new Date(day)
+                >
+                  {formatHour(hour)}
+                </span>
+              </div>
+            ))}
+          </div>
 
-                    slotDate.setHours(hour, 0, 0, 0)
+          {/* =========================
+              ACTUAL CALENDAR GRID
+          ========================== */}
 
-                    onTimeSlotClick?.(slotDate)
-                  }}
-                />
-              ))}
+          <div
+            className="
+              ml-[80px]
+              grid
+              grid-cols-7
+              overflow-hidden
+              rounded-lg
+              border
+              border-border
+              bg-white
+            "
+          >
+            {days.map((day) => {
+              const today = isToday(day)
 
-              {/* Events */}
-              {dayEvents.map((event) => {
-                const position = getEventPosition({
-                  startAt: event.startAt,
-                  endAt: event.endAt,
-                  day,
-                  startHour,
-                  hourHeight,
-                })
+              const dayEvents = events.filter((event) =>
+                isSameDay(parseISO(event.startAt), day),
+              )
 
-                if (!position) {
-                  return null
-                }
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={`
+                    relative
+                    border-l
+                    border-border
+                    first:border-l-0
+                    ${
+                      today
+                        ? 'bg-primary/[0.018]'
+                        : 'bg-white'
+                    }
+                  `}
+                >
+                  {/* Hour rows */}
+                  {hours.map((hour) => (
+                    <button
+                      key={hour}
+                      type="button"
+                      aria-label={`Create event on ${format(
+                        day,
+                        'EEEE, MMMM d',
+                      )} at ${formatHour(hour)}`}
+                      className="
+                        block
+                        w-full
+                        border-b
+                        border-border
+                        text-left
+                        transition-colors
+                        last:border-b-0
+                        hover:bg-primary/[0.025]
+                      "
+                      style={{
+                        height: hourHeight,
+                      }}
+                      onClick={() => {
+                        const slotDate = new Date(day)
 
-                return (
-                  <div
-                    key={event.id}
-                    className="absolute left-1 right-1 z-10"
-                    style={{
-                      top: position.top,
-                      height: position.height,
-                    }}
-                  >
-                    <EventCard
-                      event={event}
-                      onClick={onEventClick}
+                        slotDate.setHours(hour, 0, 0, 0)
+
+                        onTimeSlotClick?.(slotDate)
+                      }}
                     />
-                  </div>
-                )
-              })}
+                  ))}
 
-              {/* Current time indicator */}
-              {today && (
-                <CurrentTimeIndicator
-                  startHour={startHour}
-                  endHour={endHour}
-                  hourHeight={hourHeight}
-                />
-              )}
-            </div>
-          )
-        })}
+                  {/* Events */}
+                  {dayEvents.map((event) => {
+                    const position = getEventPosition({
+                      startAt: event.startAt,
+                      endAt: event.endAt,
+                      day,
+                      startHour,
+                      hourHeight,
+                    })
+
+                    if (!position) {
+                      return null
+                    }
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="
+                          absolute
+                          left-1
+                          right-1
+                          z-10
+                        "
+                        style={{
+                          top: position.top,
+                          height: position.height,
+                        }}
+                      >
+                        <EventCard
+                          event={event}
+                          onClick={onEventClick}
+                        />
+                      </div>
+                    )
+                  })}
+
+                  {/* Current time */}
+                  {today && (
+                    <CurrentTimeIndicator
+                      startHour={startHour}
+                      endHour={endHour}
+                      hourHeight={hourHeight}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -249,11 +305,26 @@ function CurrentTimeIndicator({
 
   return (
     <div
-      className="pointer-events-none absolute left-0 right-0 z-20"
+      className="
+        pointer-events-none
+        absolute
+        left-0
+        right-0
+        z-20
+      "
       style={{ top }}
     >
       <div className="relative h-px bg-danger">
-        <span className="absolute -left-1 -top-1 size-2 rounded-full bg-danger" />
+        <span
+          className="
+            absolute
+            -left-1
+            -top-1
+            size-2
+            rounded-full
+            bg-danger
+          "
+        />
       </div>
     </div>
   )
