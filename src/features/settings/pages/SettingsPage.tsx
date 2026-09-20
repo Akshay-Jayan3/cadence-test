@@ -1,5 +1,18 @@
-import { useEffect, useState } from 'react'
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { useNavigate } from 'react-router'
+import {
+  ArrowLeft,
+  Bell,
+  Camera,
+  LockKeyhole,
+  UserRound,
+} from 'lucide-react'
 
 import { Avatar } from '../../../components/ui/Avatar'
 import { Button } from '../../../components/ui/Button'
@@ -10,11 +23,19 @@ import { useSession } from '../../auth/hooks/useSession'
 import { useChangePassword } from '../hooks/useChangePassword'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
 
+const MAX_AVATAR_SIZE = 300 * 1024
+
+const ALLOWED_AVATAR_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+]
+
 export function SettingsPage() {
   const navigate = useNavigate()
 
   const sessionQuery = useSession()
-
   const updateProfileMutation = useUpdateProfile()
   const changePasswordMutation = useChangePassword()
 
@@ -22,7 +43,9 @@ export function SettingsPage() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+
   const [avatar, setAvatar] = useState<File | undefined>()
+  const [avatarPreview, setAvatarPreview] = useState<string>()
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -33,6 +56,7 @@ export function SettingsPage() {
 
   const [profileMessage, setProfileMessage] = useState('')
   const [passwordMessage, setPasswordMessage] = useState('')
+
   const [profileError, setProfileError] = useState('')
   const [passwordError, setPasswordError] = useState('')
 
@@ -45,14 +69,60 @@ export function SettingsPage() {
     setEmail(user.email)
   }, [user])
 
+  /*
+   * Create a temporary local preview when the user selects
+   * a new avatar.
+   */
+  useEffect(() => {
+    if (!avatar) {
+      setAvatarPreview(undefined)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(avatar)
+
+    setAvatarPreview(objectUrl)
+
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [avatar])
+
   function handleAvatarChange(
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: ChangeEvent<HTMLInputElement>,
   ) {
-    setAvatar(event.target.files?.[0])
+    const file = event.target.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    setProfileError('')
+    setProfileMessage('')
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      setProfileError(
+        'Please choose a PNG, JPEG, WebP, or GIF image.',
+      )
+
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      setProfileError(
+        'Avatar image must be smaller than 300 KB.',
+      )
+
+      event.target.value = ''
+      return
+    }
+
+    setAvatar(file)
   }
 
   function handleProfileSubmit(
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault()
 
@@ -67,9 +137,13 @@ export function SettingsPage() {
       },
       {
         onSuccess: () => {
-          setProfileMessage('Profile updated successfully.')
+          setProfileMessage(
+            'Profile updated successfully.',
+          )
+
           setAvatar(undefined)
         },
+
         onError: () => {
           setProfileError(
             'Unable to update your profile. Please try again.',
@@ -80,7 +154,7 @@ export function SettingsPage() {
   }
 
   function handlePasswordSubmit(
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault()
 
@@ -91,6 +165,7 @@ export function SettingsPage() {
       setPasswordError(
         'New passwords do not match.',
       )
+
       return
     }
 
@@ -109,6 +184,7 @@ export function SettingsPage() {
             'Password updated successfully.',
           )
         },
+
         onError: () => {
           setPasswordError(
             'Unable to update your password. Please try again.',
@@ -134,17 +210,35 @@ export function SettingsPage() {
 
   const initials = getInitials(user.name)
 
+  /*
+   * The API may expose createdAt depending on the user shape.
+   * We only display it when it actually exists.
+   */
+  const memberSince =
+    'createdAt' in user &&
+    typeof user.createdAt === 'string'
+      ? formatMemberSince(user.createdAt)
+      : undefined
+
   return (
     <main className="min-h-screen bg-canvas">
       {/* Header */}
       <header className="flex h-16 items-center gap-3 border-b border-border bg-white px-6">
         <button
           type="button"
-          aria-label="Go back"
+          aria-label="Go back to calendar"
           onClick={() => navigate('/calendar')}
-          className="flex size-8 items-center justify-center rounded-md bg-canvas text-ink/60 hover:text-ink"
+          className="
+            flex size-8 items-center justify-center
+            rounded-md text-ink/50
+            transition-colors
+            hover:bg-canvas hover:text-ink
+            focus-visible:outline-none
+            focus-visible:ring-2
+            focus-visible:ring-primary/30
+          "
         >
-          ←
+          <ArrowLeft className="size-4" />
         </button>
 
         <h1 className="text-title font-semibold text-ink">
@@ -159,24 +253,26 @@ export function SettingsPage() {
             <SettingsNavItem
               active
               label="Account"
-              icon="♙"
+              icon={<UserRound className="size-3.5" />}
             />
 
             <SettingsNavItem
               label="Security"
-              icon="♧"
+              icon={
+                <LockKeyhole className="size-3.5" />
+              }
             />
 
             <SettingsNavItem
               label="Notifications"
-              icon="♧"
+              icon={<Bell className="size-3.5" />}
             />
           </nav>
         </aside>
 
-        {/* Content */}
+        {/* Main settings content */}
         <section className="min-w-0 max-w-2xl flex-1">
-          {/* Profile */}
+          {/* Profile details */}
           <section className="rounded-xl border border-border bg-white p-6">
             <div className="mb-6">
               <h2 className="text-title font-semibold text-ink">
@@ -191,32 +287,68 @@ export function SettingsPage() {
             <form onSubmit={handleProfileSubmit}>
               {/* Avatar */}
               <div className="mb-6 flex items-center gap-4">
-                <Avatar
-                  src={
-                    avatar
-                      ? URL.createObjectURL(avatar)
-                      : getAvatarUrl(user.avatarUrl)
-                  }
-                  fallback={initials}
-                  alt={user.name}
-                  size="lg"
-                />
+                <div className="relative">
+                  <Avatar
+                    src={
+                      avatarPreview ??
+                      getAvatarUrl(user.avatarUrl)
+                    }
+                    fallback={initials}
+                    alt={user.name}
+                    size="lg"
+                  />
 
-                <div>
+                  {/* Camera upload button */}
                   <label
                     htmlFor="settings-avatar"
-                    className="cursor-pointer text-label font-medium text-primary hover:underline"
+                    aria-label="Change profile photo"
+                    className="
+                      absolute bottom-0 right-0
+                      flex size-5 cursor-pointer
+                      items-center justify-center
+                      rounded-full border-2 border-white
+                      bg-primary text-white
+                      shadow-sm
+                      transition-transform
+                      hover:scale-105
+                      focus-within:ring-2
+                      focus-within:ring-primary/30
+                    "
+                  >
+                    <Camera className="size-2.5" />
+
+                    <input
+                      id="settings-avatar"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={handleAvatarChange}
+                      className="sr-only"
+                    />
+                  </label>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-body font-semibold text-ink">
+                    {user.name}
+                  </p>
+
+                  {memberSince && (
+                    <p className="mt-0.5 text-label text-ink/50">
+                      Member since {memberSince}
+                    </p>
+                  )}
+
+                  <label
+                    htmlFor="settings-avatar"
+                    className="
+                      mt-1 inline-block
+                      cursor-pointer
+                      text-label font-medium text-primary
+                      hover:underline
+                    "
                   >
                     Change photo
                   </label>
-
-                  <input
-                    id="settings-avatar"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    onChange={handleAvatarChange}
-                    className="sr-only"
-                  />
                 </div>
               </div>
 
@@ -244,6 +376,7 @@ export function SettingsPage() {
                 />
               </div>
 
+              {/* Profile error */}
               {profileError && (
                 <p
                   role="alert"
@@ -253,16 +386,20 @@ export function SettingsPage() {
                 </p>
               )}
 
+              {/* Profile success */}
               {profileMessage && (
                 <p className="mt-4 text-label text-primary">
                   {profileMessage}
                 </p>
               )}
 
+              {/* Save */}
               <div className="mt-6 flex justify-end">
                 <Button
                   type="submit"
-                  disabled={updateProfileMutation.isPending}
+                  disabled={
+                    updateProfileMutation.isPending
+                  }
                 >
                   {updateProfileMutation.isPending
                     ? 'Saving...'
@@ -292,7 +429,9 @@ export function SettingsPage() {
                   type="password"
                   value={currentPassword}
                   onChange={(event) =>
-                    setCurrentPassword(event.target.value)
+                    setCurrentPassword(
+                      event.target.value,
+                    )
                   }
                   required
                 />
@@ -304,7 +443,9 @@ export function SettingsPage() {
                     type="password"
                     value={newPassword}
                     onChange={(event) =>
-                      setNewPassword(event.target.value)
+                      setNewPassword(
+                        event.target.value,
+                      )
                     }
                     required
                   />
@@ -315,16 +456,21 @@ export function SettingsPage() {
                     type="password"
                     value={confirmPassword}
                     onChange={(event) =>
-                      setConfirmPassword(event.target.value)
+                      setConfirmPassword(
+                        event.target.value,
+                      )
                     }
                     required
                   />
                 </div>
 
-                <PasswordStrength password={newPassword} />
+                <PasswordStrength
+                  password={newPassword}
+                />
 
                 <div className="my-2 border-t border-border" />
 
+                {/* Sign out other sessions */}
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-body font-medium text-ink">
@@ -332,7 +478,8 @@ export function SettingsPage() {
                     </p>
 
                     <p className="text-label text-ink/50">
-                      Log out everywhere else after this change
+                      Log out everywhere else after this
+                      change
                     </p>
                   </div>
 
@@ -347,6 +494,7 @@ export function SettingsPage() {
                   />
                 </div>
 
+                {/* Password error */}
                 {passwordError && (
                   <p
                     role="alert"
@@ -356,12 +504,14 @@ export function SettingsPage() {
                   </p>
                 )}
 
+                {/* Password success */}
                 {passwordMessage && (
                   <p className="text-label text-primary">
                     {passwordMessage}
                   </p>
                 )}
 
+                {/* Update password */}
                 <div className="flex justify-end">
                   <Button
                     type="submit"
@@ -385,7 +535,7 @@ export function SettingsPage() {
 
 interface SettingsNavItemProps {
   label: string
-  icon: string
+  icon: ReactNode
   active?: boolean
 }
 
@@ -399,8 +549,11 @@ function SettingsNavItem({
       type="button"
       disabled={!active}
       className={`
-        flex items-center gap-3 rounded-md px-3 py-2 text-left
-        text-label font-medium
+        flex items-center gap-3
+        rounded-md px-3 py-2
+        text-left text-label font-medium
+        transition-colors
+        disabled:cursor-default
         ${
           active
             ? 'bg-primary/5 text-primary'
@@ -408,7 +561,7 @@ function SettingsNavItem({
         }
       `}
     >
-      <span aria-hidden="true">{icon}</span>
+      {icon}
       {label}
     </button>
   )
@@ -431,11 +584,14 @@ function PasswordStrength({
         {Array.from({ length: 3 }).map((_, index) => (
           <span
             key={index}
-            className={`h-1 w-5 rounded-full ${
-              index < strength
-                ? 'bg-primary'
-                : 'bg-border'
-            }`}
+            className={`
+              h-1 w-5 rounded-full
+              ${
+                index < strength
+                  ? 'bg-primary'
+                  : 'bg-border'
+              }
+            `}
           />
         ))}
       </div>
@@ -458,11 +614,17 @@ function getPasswordStrength(password: string) {
     score += 1
   }
 
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) {
+  if (
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password)
+  ) {
     score += 1
   }
 
-  if (/\d/.test(password) || /[^A-Za-z0-9]/.test(password)) {
+  if (
+    /\d/.test(password) ||
+    /[^A-Za-z0-9]/.test(password)
+  ) {
     score += 1
   }
 
@@ -478,6 +640,14 @@ function getInitials(name: string) {
     .join('')
 }
 
+/**
+ * The API returns avatarUrl as something like:
+ *
+ * /avatars/3f2a1c9e-....jpg
+ *
+ * The avatar endpoint is public, so the browser can load
+ * the image directly from the API base URL.
+ */
 function getAvatarUrl(avatarUrl: string | null) {
   if (!avatarUrl) {
     return undefined
@@ -487,5 +657,21 @@ function getAvatarUrl(avatarUrl: string | null) {
     return avatarUrl
   }
 
-  return `${import.meta.env.VITE_API_BASE_URL}${avatarUrl}`
+  return new URL(
+    avatarUrl,
+    import.meta.env.VITE_API_BASE_URL,
+  ).toString()
+}
+
+function formatMemberSince(date: string) {
+  const parsedDate = new Date(date)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return ''
+  }
+
+  return parsedDate.toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  })
 }

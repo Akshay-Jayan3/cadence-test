@@ -3,7 +3,13 @@ import type { EventColor } from '../constants/eventColor'
 import { EVENT_COLORS } from '../constants/eventColor'
 import { Button } from '../../../components/ui/Button'
 import { ColorSwatch } from '../../../components/ui/ColorSwatch'
-import type { CreateEventInput } from '../../../lib/api/types'
+import type { CreateEventInput } from '../../../lib/api/types';
+import {
+  Calendar,
+  MapPin,
+  AlignLeft,
+  Trash2,
+} from 'lucide-react'
 
 interface EventFormProps {
   initialValues?: Partial<CreateEventInput>
@@ -46,7 +52,7 @@ export function EventForm({
 
   const [color, setColor] = useState<EventColor>(
     (initialValues?.color as EventColor) ??
-      EVENT_COLORS.primary,
+    EVENT_COLORS.primary,
   )
 
   const isEditMode = Boolean(onDelete)
@@ -120,10 +126,14 @@ export function EventForm({
         {/* Date + time */}
         <div className="mt-4 flex items-center gap-2">
           <span
-            className="flex w-5 shrink-0 justify-center text-ink/45"
+            className="flex w-4 shrink-0 justify-center text-ink/45"
             aria-hidden="true"
           >
-            <CalendarIcon />
+            <Calendar
+              size={15}
+              strokeWidth={1.7}
+              className="text-ink/45"
+            />
           </span>
 
           <input
@@ -136,8 +146,8 @@ export function EventForm({
             required
             disabled={isBusy}
             className="
-              h-10
               min-w-0
+              py-2
               flex-1
               rounded-lg
               border
@@ -186,8 +196,8 @@ export function EventForm({
             required
             disabled={isBusy}
             className="
-              h-10
-              w-[80px]
+              py-2
+              w-[140px]
               shrink-0
               rounded-lg
               border
@@ -214,7 +224,11 @@ export function EventForm({
             className="flex w-5 shrink-0 justify-center text-ink/45"
             aria-hidden="true"
           >
-            <LocationIcon />
+            <MapPin
+              size={15}
+              strokeWidth={1.7}
+              className="text-ink/45"
+            />
           </span>
 
           <input
@@ -254,7 +268,11 @@ export function EventForm({
             className="flex w-5 shrink-0 justify-center pt-2 text-ink/45"
             aria-hidden="true"
           >
-            <DescriptionIcon />
+            <AlignLeft
+              size={15}
+              strokeWidth={1.7}
+              className="text-ink/45"
+            />
           </span>
 
           <textarea
@@ -317,7 +335,10 @@ export function EventForm({
               disabled={isBusy}
               className="gap-1.5 px-3"
             >
-              <DeleteIcon />
+              <Trash2
+                size={13}
+                strokeWidth={1.8}
+              />
 
               {isDeleting
                 ? 'Deleting...'
@@ -402,85 +423,4 @@ function toDateTimeLocalValue(date: Date): string {
   ).padStart(2, '0')
 
   return `${year}-${month}-${day}T${hours}:${minutes}`
-}
-
-/* --------------------------------
-   Icons
---------------------------------- */
-
-function CalendarIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      aria-hidden="true"
-    >
-      <rect
-        x="3"
-        y="4"
-        width="18"
-        height="17"
-        rx="2"
-      />
-      <path d="M8 2v4M16 2v4M3 9h18" />
-    </svg>
-  )
-}
-
-function LocationIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      aria-hidden="true"
-    >
-      <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
-      <circle cx="12" cy="10" r="2.5" />
-    </svg>
-  )
-}
-
-function DescriptionIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      aria-hidden="true"
-    >
-      <path d="M5 6h14M5 12h14M5 18h9" />
-    </svg>
-  )
-}
-
-function DeleteIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 7h16" />
-      <path d="M10 11v6M14 11v6" />
-      <path d="M6 7l1 14h10l1-14" />
-      <path d="M9 7V4h6v3" />
-    </svg>
-  )
 }

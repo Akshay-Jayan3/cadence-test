@@ -26,7 +26,7 @@ export function WeekCalendar({
   date,
   events = [],
   startHour = 8,
-  endHour = 19,
+  endHour = 24,
   hourHeight = 80,
   onTimeSlotClick,
   onEventClick,
@@ -39,8 +39,7 @@ export function WeekCalendar({
   )
 
   return (
-    <div className="h-[calc(100vh-8rem)] min-h-[700px] overflow-auto bg-canvas">
-      <div className="min-w-[1360px]">
+    <div className="flex-1 overflow-auto bg-canvas">
 
         {/* =========================
             DAY HEADER
@@ -260,7 +259,6 @@ export function WeekCalendar({
             })}
           </div>
         </div>
-      </div>
     </div>
   )
 }

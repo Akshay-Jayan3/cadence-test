@@ -1,4 +1,7 @@
 import { MiniCalendar } from './MiniCalendar'
+import { useSession } from '../../auth/hooks/useSession'
+import { getStoredUser } from '../../../lib/auth/storage';
+import { useNavigate } from 'react-router'
 
 interface CalendarSidebarProps {
   selectedDate: Date
@@ -11,6 +14,13 @@ export function CalendarSidebar({
   onDateChange,
   onCreateEvent,
 }: CalendarSidebarProps) {
+  const sessionQuery = useSession();
+  const navigate = useNavigate()
+
+  // Stored user gives us an immediate fallback while /profile loads.
+  const user =
+    sessionQuery.data ?? getStoredUser()
+
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-white">
       {/* Brand */}
@@ -29,7 +39,14 @@ export function CalendarSidebar({
         <button
           type="button"
           onClick={onCreateEvent}
-          className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary text-label font-medium text-white shadow-[0px_8px_20px_0px_#3568F833] hover:opacity-90"
+          className="
+            flex h-9 w-full items-center
+            justify-center gap-2
+            rounded-md bg-primary
+            text-label font-medium text-white
+            shadow-[0px_8px_20px_0px_#3568F833]
+            hover:opacity-90
+          "
         >
           <span className="text-sm">+</span>
           Create
@@ -73,31 +90,43 @@ export function CalendarSidebar({
         </div>
       </div>
 
-      {/* User */}
-      <div className="mt-auto border-t border-border p-3">
-        <button
-          type="button"
-          className="flex w-full items-center gap-2 rounded-md p-1 text-left hover:bg-canvas"
-        >
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-            JA
-          </div>
+      {/* Logged-in user */}
+{/* User */}
+<div className="mt-auto border-t border-border p-3">
+  <button
+    type="button"
+    onClick={() => navigate('/settings')}
+    className="
+      flex w-full items-center gap-2
+      rounded-md p-1
+      text-left
+      transition-colors
+      hover:bg-canvas
+      focus-visible:outline-none
+      focus-visible:ring-2
+      focus-visible:ring-primary/30
+    "
+  >
+    <UserAvatar
+      name={user?.name ?? 'User'}
+      avatarUrl={user?.avatarUrl ?? null}
+    />
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[10px] font-semibold text-ink">
-              Jordan Alvarez
-            </p>
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-[10px] font-semibold text-ink">
+        {user?.name ?? 'Loading...'}
+      </p>
 
-            <p className="truncate text-[9px] text-ink/40">
-              jordan@planetmedia.in
-            </p>
-          </div>
+      <p className="truncate text-[9px] text-ink/40">
+        {user?.email ?? ''}
+      </p>
+    </div>
 
-          <span className="text-[10px] text-ink/40">
-            •
-          </span>
-        </button>
-      </div>
+    <span className="text-[10px] text-ink/40">
+      •
+    </span>
+  </button>
+</div>
     </aside>
   )
 }
@@ -118,9 +147,77 @@ function CalendarLegend({
         style={{ backgroundColor: color }}
       />
 
-      <span className="text-label text-ink font-medium">
+      <span className="text-label font-medium text-ink">
         {label}
       </span>
     </div>
   )
+}
+
+interface UserAvatarProps {
+  name: string
+  avatarUrl: string | null
+}
+
+function UserAvatar({
+  name,
+  avatarUrl,
+}: UserAvatarProps) {
+  if (avatarUrl) {
+    return (
+      <img
+        src={resolveAvatarUrl(avatarUrl)}
+        alt={name}
+        className="
+          size-7 shrink-0
+          rounded-full
+          object-cover
+        "
+      />
+    )
+  }
+
+  return (
+    <div
+      className="
+        flex size-7 shrink-0
+        items-center justify-center
+        rounded-full
+        bg-primary/10
+        text-[10px]
+        font-semibold
+        text-primary
+      "
+    >
+      {getInitials(name)}
+    </div>
+  )
+}
+
+function getInitials(name: string): string {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
+  return initials || 'U'
+}
+
+function resolveAvatarUrl(
+  avatarUrl: string,
+): string {
+  if (
+    avatarUrl.startsWith('http://') ||
+    avatarUrl.startsWith('https://')
+  ) {
+    return avatarUrl
+  }
+
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL
+
+  return `${apiBaseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`
 }

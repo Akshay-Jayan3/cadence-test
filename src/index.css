@@ -42,17 +42,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
-}
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-}
 
 button,
 input,

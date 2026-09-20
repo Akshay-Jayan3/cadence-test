@@ -250,7 +250,7 @@ export function CalendarPage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-canvas">
+    <main className="flex h-screen overflow-hidden bg-canvas">
       <CalendarSidebar
         selectedDate={selectedDate}
         onDateChange={setSelectedDate}
@@ -259,7 +259,7 @@ export function CalendarPage() {
         }
       />
 
-      <section className="min-w-0 flex-1 bg-white">
+      <section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-white">
         <CalendarToolbar
           date={selectedDate}
           view={view}
@@ -305,7 +305,7 @@ export function CalendarPage() {
         )}
 
         {view !== 'week' && (
-          <div className="flex min-h-[400px] items-center justify-center">
+          <div className="flex items-center justify-center">
             <p className="text-body text-ink/50">
               {view === 'day'
                 ? 'Day view is not implemented.'
