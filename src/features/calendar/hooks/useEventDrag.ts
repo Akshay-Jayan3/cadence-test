@@ -118,6 +118,15 @@ export function useEventDrag({
       dayIndex: number,
       mode: DragMode,
     ) => {
+      /*
+       * Clear any suppression left over from a previous drag. If that
+       * drag ended over a different day column, no click ever reached
+       * the card to clear it, and a stale flag would swallow this
+       * gesture's click instead. Every real click starts with a
+       * pointerdown, so resetting here always beats it.
+       */
+      suppressClickRef.current = false
+
       /* Ignore right-clicks and anything that isn't a primary press. */
       if (pointerEvent.button !== 0) {
         return
@@ -258,22 +267,20 @@ export function useEventDrag({
     setPreview(null)
   }, [])
 
-  const handleClickCapture = useCallback(
-    (clickEvent: {
-      stopPropagation: () => void
-      preventDefault: () => void
-    }) => {
-      if (!suppressClickRef.current) {
-        return
-      }
+  /*
+   * True when the click that just arrived is the tail of a drag and
+   * should not count as a tap. Reading it clears it, so each drag
+   * swallows exactly one click.
+   */
+  const consumeClickSuppression = useCallback(() => {
+    if (!suppressClickRef.current) {
+      return false
+    }
 
-      suppressClickRef.current = false
+    suppressClickRef.current = false
 
-      clickEvent.stopPropagation()
-      clickEvent.preventDefault()
-    },
-    [],
-  )
+    return true
+  }, [])
 
   return {
     preview,
@@ -281,6 +288,6 @@ export function useEventDrag({
     move,
     end,
     cancel,
-    handleClickCapture,
+    consumeClickSuppression,
   }
 }

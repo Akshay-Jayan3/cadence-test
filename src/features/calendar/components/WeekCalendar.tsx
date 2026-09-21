@@ -358,16 +358,17 @@ export function WeekCalendar({
                         onPointerMove={drag.move}
                         onPointerUp={drag.end}
                         onPointerCancel={drag.cancel}
-                        onClickCapture={
-                          drag.handleClickCapture
-                        }
-                      >
-                        <EventCard
-                          event={displayEvent}
-                          onClick={() =>
-                            onEventClick?.(event)
+                        onClick={() => {
+                          if (
+                            drag.consumeClickSuppression()
+                          ) {
+                            return
                           }
-                        />
+
+                          onEventClick?.(event)
+                        }}
+                      >
+                        <EventCard event={displayEvent} />
 
                         {/* Resize handle */}
                         <div
