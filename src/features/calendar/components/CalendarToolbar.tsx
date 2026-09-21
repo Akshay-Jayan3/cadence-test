@@ -1,10 +1,11 @@
 import { endOfWeek, format, startOfWeek } from 'date-fns'
-import { Settings } from 'lucide-react'
+import { Bell, Info } from 'lucide-react'
 
 import { Button } from '../../../components/ui/Button'
 import { Tabs } from '../../../components/ui/Tab'
 import { useSession } from '../../auth/hooks/useSession'
 import { getStoredUser } from '../../../lib/auth/storage'
+import { WEEK_STARTS_ON } from '../utils/dateUtils'
 
 type CalendarView = 'day' | 'week' | 'month'
 
@@ -18,10 +19,16 @@ interface CalendarToolbarProps {
   onCreateEvent: () => void
 }
 
+/*
+ * Only the week view is backed. Day and Month stay visible to match
+ * the design, but are disabled rather than selectable-and-empty.
+ */
 const viewTabs = [
   {
     value: 'day' as const,
     label: 'Day',
+    disabled: true,
+    title: 'Day view isn’t available in this build',
   },
   {
     value: 'week' as const,
@@ -30,6 +37,8 @@ const viewTabs = [
   {
     value: 'month' as const,
     label: 'Month',
+    disabled: true,
+    title: 'Month view isn’t available in this build',
   },
 ]
 
@@ -48,11 +57,11 @@ export function CalendarToolbar({
     sessionQuery.data ?? getStoredUser()
 
   const weekStart = startOfWeek(date, {
-    weekStartsOn: 0,
+    weekStartsOn: WEEK_STARTS_ON,
   })
 
   const weekEnd = endOfWeek(date, {
-    weekStartsOn: 0,
+    weekStartsOn: WEEK_STARTS_ON,
   })
 
   const weekLabel = getWeekLabel(
@@ -76,25 +85,62 @@ export function CalendarToolbar({
             ⌕
           </span>
 
+          {/* Search has no backing endpoint — shown, not wired. */}
           <input
             type="search"
             placeholder="Search events"
+            disabled
+            aria-label="Search events (not available)"
+            title="Search isn't available in this build"
             className="
               h-7 w-full
+              cursor-not-allowed
               rounded-md
               bg-canvas
               pl-7 pr-3
               text-[10px]
               text-ink
+              opacity-60
               outline-none
               placeholder:text-ink/35
-              focus:ring-1
-              focus:ring-primary/30
             "
           />
         </div>
 
         <div className="ml-auto flex items-center gap-3 text-ink/40">
+          {/* Notifications and help are visual only. */}
+          <button
+            type="button"
+            disabled
+            aria-label="Notifications (not available)"
+            title="Notifications aren't available in this build"
+            className="
+              relative flex size-7 items-center justify-center
+              rounded-md text-ink/40
+              disabled:cursor-not-allowed
+            "
+          >
+            <Bell size={15} strokeWidth={1.7} />
+
+            <span
+              aria-hidden="true"
+              className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-danger ring-2 ring-white"
+            />
+          </button>
+
+          <button
+            type="button"
+            disabled
+            aria-label="Help (not available)"
+            title="Help isn't available in this build"
+            className="
+              flex size-7 items-center justify-center
+              rounded-md text-ink/40
+              disabled:cursor-not-allowed
+            "
+          >
+            <Info size={15} strokeWidth={1.7} />
+          </button>
 
           <UserAvatar
             name={user?.name ?? 'User'}

@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
   type ChangeEvent,
   type FormEvent,
@@ -45,7 +46,6 @@ export function SettingsPage() {
   const [email, setEmail] = useState('')
 
   const [avatar, setAvatar] = useState<File | undefined>()
-  const [avatarPreview, setAvatarPreview] = useState<string>()
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -60,33 +60,38 @@ export function SettingsPage() {
   const [profileError, setProfileError] = useState('')
   const [passwordError, setPasswordError] = useState('')
 
-  useEffect(() => {
-    if (!user) {
-      return
-    }
+  /*
+   * The profile arrives after first paint, so the form seeds itself
+   * the first time a user lands rather than through an effect that
+   * would also stomp on edits in progress whenever the query
+   * refetches.
+   */
+  const [seededFor, setSeededFor] = useState<string>()
 
+  if (user && seededFor !== user.id) {
+    setSeededFor(user.id)
     setName(user.name)
     setEmail(user.email)
-  }, [user])
+  }
 
   /*
-   * Create a temporary local preview when the user selects
-   * a new avatar.
+   * A local preview for a newly picked avatar, derived rather than
+   * mirrored into state; the effect exists only to revoke the URL.
    */
+  const avatarPreview = useMemo(
+    () => (avatar ? URL.createObjectURL(avatar) : undefined),
+    [avatar],
+  )
+
   useEffect(() => {
-    if (!avatar) {
-      setAvatarPreview(undefined)
+    if (!avatarPreview) {
       return
     }
 
-    const objectUrl = URL.createObjectURL(avatar)
-
-    setAvatarPreview(objectUrl)
-
     return () => {
-      URL.revokeObjectURL(objectUrl)
+      URL.revokeObjectURL(avatarPreview)
     }
-  }, [avatar])
+  }, [avatarPreview])
 
   function handleAvatarChange(
     event: ChangeEvent<HTMLInputElement>,

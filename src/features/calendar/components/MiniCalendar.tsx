@@ -17,7 +17,8 @@ interface MiniCalendarProps {
   onChange: (date: Date) => void
 }
 
-const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+/* Monday-first, matching WEEK_STARTS_ON and the week grid. */
+const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 export function MiniCalendar({
   value,

@@ -10,6 +10,7 @@ interface EditEventModalProps {
   onDelete: () => void
   isSubmitting?: boolean
   isDeleting?: boolean
+  error?: string
 }
 
 export function EditEventModal({
@@ -20,6 +21,7 @@ export function EditEventModal({
   onDelete,
   isSubmitting = false,
   isDeleting = false,
+  error,
 }: EditEventModalProps) {
   if (!event) {
     return null
@@ -46,6 +48,7 @@ export function EditEventModal({
         onDelete={onDelete}
         isSubmitting={isSubmitting}
         isDeleting={isDeleting}
+        error={error}
       />
     </Modal>
   )

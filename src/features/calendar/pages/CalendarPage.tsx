@@ -22,6 +22,8 @@ import { useDeleteEvent } from '../../events/hooks/useDeleteEvent'
 import { useEvents } from '../../events/hooks/useEvents'
 import { useUpdateEvent } from '../../events/hooks/useUpdateEvent'
 
+import { getApiErrorMessage } from '../../../lib/api/errors'
+
 import type {
   CreateEventInput,
   Event,
@@ -99,15 +101,24 @@ export function CalendarPage() {
   function handleCreateEvent(
     values: CreateEventInput,
   ) {
-    createEventMutation.mutate({
-      ...values,
-      startsAt: new Date(
-        values.startsAt,
-      ).toISOString(),
-      endsAt: new Date(
-        values.endsAt,
-      ).toISOString(),
-    })
+    createEventMutation.mutate(
+      {
+        ...values,
+        startsAt: new Date(
+          values.startsAt,
+        ).toISOString(),
+        endsAt: new Date(
+          values.endsAt,
+        ).toISOString(),
+      },
+      {
+        onSuccess: () => {
+          setCreateModalOpen(false)
+          setCreateStartAt('')
+          setCreateEndAt('')
+        },
+      },
+    )
   }
 
   function handleCreateModalClose() {
@@ -193,6 +204,30 @@ export function CalendarPage() {
     )
   }
 
+  /*
+   * Drag-to-reschedule and resize. The mutation applies the change
+   * optimistically and rolls back on failure, so this only has to
+   * surface the failure for the retry affordance below.
+   */
+  function handleEventDrop(
+    event: Event,
+    startsAt: string,
+    endsAt: string,
+  ) {
+    const variables = {
+      id: event.id,
+      data: { startsAt, endsAt },
+    }
+
+    setLastFailedUpdate(null)
+
+    updateEventMutation.mutate(variables, {
+      onError: () => {
+        setLastFailedUpdate(variables)
+      },
+    })
+  }
+
   function handleRetryUpdate() {
     if (!lastFailedUpdate) {
       return
@@ -272,47 +307,41 @@ export function CalendarPage() {
           }
         />
 
-        {view === 'week' && (
-          <>
-            {eventsQuery.isLoading && (
-              <div className="p-6">
-                Loading events...
-              </div>
-            )}
-
-            {eventsQuery.isError && (
-              <div className="p-6 text-danger">
-                Failed to load events.
-              </div>
-            )}
-
-            {!eventsQuery.isLoading &&
-              !eventsQuery.isError && (
-                <WeekCalendar
-                  date={selectedDate}
-                  events={events}
-                  startHour={8}
-                  endHour={19}
-                  onTimeSlotClick={
-                    handleTimeSlotClick
-                  }
-                  onEventClick={
-                    handleEventClick
-                  }
-                />
-              )}
-          </>
-        )}
-
-        {view !== 'week' && (
-          <div className="flex items-center justify-center">
-            <p className="text-body text-ink/50">
-              {view === 'day'
-                ? 'Day view is not implemented.'
-                : 'Month view is not implemented.'}
-            </p>
+        {eventsQuery.isLoading && (
+          <div className="p-6 text-body text-ink/50">
+            Loading events...
           </div>
         )}
+
+        {eventsQuery.isError && (
+          <div className="flex flex-col items-start gap-2 p-6">
+            <p className="text-body text-danger">
+              Couldn't load this week's events.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => eventsQuery.refetch()}
+              className="text-label font-medium text-primary hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!eventsQuery.isLoading &&
+          !eventsQuery.isError && (
+            <WeekCalendar
+              date={selectedDate}
+              events={events}
+              onTimeSlotClick={
+                handleTimeSlotClick
+              }
+              onEventClick={handleEventClick}
+              onEventDrop={handleEventDrop}
+            />
+          )}
+
       </section>
 
       <CreateEventModal
@@ -323,6 +352,14 @@ export function CalendarPage() {
         onSubmit={handleCreateEvent}
         isSubmitting={
           createEventMutation.isPending
+        }
+        error={
+          createEventMutation.isError
+            ? getApiErrorMessage(
+                createEventMutation.error,
+                'Could not create the event. Please try again.',
+              )
+            : undefined
         }
       />
 
@@ -358,6 +395,16 @@ export function CalendarPage() {
         }
         isDeleting={
           deleteEventMutation.isPending
+        }
+        error={
+          updateEventMutation.isError ||
+          deleteEventMutation.isError
+            ? getApiErrorMessage(
+                updateEventMutation.error ??
+                  deleteEventMutation.error,
+                'Could not save your changes. Please try again.',
+              )
+            : undefined
         }
       />
 

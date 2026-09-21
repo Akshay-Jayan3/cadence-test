@@ -9,6 +9,7 @@ interface CreateEventModalProps {
   onClose: () => void
   onSubmit: (values: CreateEventInput) => void
   isSubmitting?: boolean
+  error?: string
 }
 
 export function CreateEventModal({
@@ -18,6 +19,7 @@ export function CreateEventModal({
   onClose,
   onSubmit,
   isSubmitting = false,
+  error,
 }: CreateEventModalProps) {
   return (
     <Modal
@@ -34,6 +36,7 @@ export function CreateEventModal({
         onSubmit={onSubmit}
         onCancel={onClose}
         isSubmitting={isSubmitting}
+        error={error}
       />
     </Modal>
   )

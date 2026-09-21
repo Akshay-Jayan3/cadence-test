@@ -15,11 +15,14 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
+/*
+ * No default Content-Type on purpose. Axios already sends JSON for
+ * plain-object bodies, and pinning the header here would make it
+ * serialise FormData to JSON instead — silently dropping the avatar
+ * file that /auth/register and PATCH /profile expect as multipart.
+ */
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 let refreshPromise: Promise<string> | null = null

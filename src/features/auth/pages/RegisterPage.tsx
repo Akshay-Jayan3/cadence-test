@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { Button } from '../../../components/ui/Button'
@@ -25,24 +25,28 @@ export function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [avatar, setAvatar] = useState<File | undefined>()
 
-  const [avatarPreview, setAvatarPreview] = useState<string>()
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  /*
+   * Derived from the selected file rather than mirrored into state,
+   * so there is no effect cascading a render just to produce a URL.
+   * The cleanup still has to run, hence the revoke-on-change effect.
+   */
+  const avatarPreview = useMemo(
+    () => (avatar ? URL.createObjectURL(avatar) : undefined),
+    [avatar],
+  )
+
   useEffect(() => {
-    if (!avatar) {
-      setAvatarPreview(undefined)
+    if (!avatarPreview) {
       return
     }
 
-    const previewUrl = URL.createObjectURL(avatar)
-
-    setAvatarPreview(previewUrl)
-
     return () => {
-      URL.revokeObjectURL(previewUrl)
+      URL.revokeObjectURL(avatarPreview)
     }
-  }, [avatar])
+  }, [avatarPreview])
 
   function handleAvatarChange(
     event: React.ChangeEvent<HTMLInputElement>,

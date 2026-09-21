@@ -12,8 +12,16 @@ import {
   subMonths,
 } from 'date-fns'
 
+/*
+ * The design's week runs Monday → Sunday. date-fns wants this as a
+ * numeric option in half a dozen places, so it is declared once here
+ * rather than repeated at every call site — which is how the week
+ * grid and the mini month picker drifted apart in the first place.
+ */
+export const WEEK_STARTS_ON = 1 as const
+
 export function getWeekDays(date: Date): Date[] {
-  const start = startOfWeek(date, { weekStartsOn: 0 })
+  const start = startOfWeek(date, { weekStartsOn: WEEK_STARTS_ON })
 
   return Array.from({ length: 7 }, (_, index) =>
     addDays(start, index),
@@ -22,11 +30,11 @@ export function getWeekDays(date: Date): Date[] {
 
 export function getMonthDays(date: Date): Date[] {
   const start = startOfWeek(startOfMonth(date), {
-    weekStartsOn: 0,
+    weekStartsOn: WEEK_STARTS_ON,
   })
 
   const end = endOfWeek(endOfMonth(date), {
-    weekStartsOn: 0,
+    weekStartsOn: WEEK_STARTS_ON,
   })
 
   const days: Date[] = []
@@ -76,7 +84,7 @@ export function getNextMonth(date: Date): Date {
 
 export function getWeekRange(date: Date) {
   return {
-    from: startOfWeek(date, { weekStartsOn: 0 }),
-    to: endOfWeek(date, { weekStartsOn: 0 }),
+    from: startOfWeek(date, { weekStartsOn: WEEK_STARTS_ON }),
+    to: endOfWeek(date, { weekStartsOn: WEEK_STARTS_ON }),
   }
 }

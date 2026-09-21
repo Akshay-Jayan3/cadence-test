@@ -117,21 +117,21 @@ export function EventDetails({
           </div>
         )}
 
-        {/* Join call — visual only */}
+        {/* Join call — no endpoint behind it, so shown but disabled. */}
         <button
           type="button"
+          disabled
+          title="Joining a call isn't available in this build"
           className="
             mb-6 mt-5
             flex h-11 w-full
+            cursor-not-allowed
             items-center justify-center
             rounded-lg
-            bg-primary
+            bg-primary/40
             text-[13px]
             font-semibold
             text-white
-            shadow-[0px_8px_20px_0px_#3568F833]
-            transition-opacity
-            hover:opacity-90
           "
         >
           Join call

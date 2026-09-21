@@ -1,7 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router'
+
 import { MiniCalendar } from './MiniCalendar'
 import { useSession } from '../../auth/hooks/useSession'
-import { getStoredUser } from '../../../lib/auth/storage';
-import { useNavigate } from 'react-router'
+import { getStoredUser } from '../../../lib/auth/storage'
+import { logout } from '../../../lib/auth/session'
 
 interface CalendarSidebarProps {
   selectedDate: Date
@@ -14,12 +18,25 @@ export function CalendarSidebar({
   onDateChange,
   onCreateEvent,
 }: CalendarSidebarProps) {
-  const sessionQuery = useSession();
+  const sessionQuery = useSession()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   // Stored user gives us an immediate fallback while /profile loads.
   const user =
     sessionQuery.data ?? getStoredUser()
+
+  function handleLogout() {
+    logout()
+
+    /*
+     * Drop the cached profile and events with the tokens, so the
+     * next account to sign in on this browser never sees them.
+     */
+    queryClient.clear()
+
+    navigate('/login', { replace: true })
+  }
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-white">
@@ -92,41 +109,55 @@ export function CalendarSidebar({
 
       {/* Logged-in user */}
 {/* User */}
-<div className="mt-auto border-t border-border p-3">
-  <button
-    type="button"
-    onClick={() => navigate('/settings')}
-    className="
-      flex w-full items-center gap-2
-      rounded-md p-1
-      text-left
-      transition-colors
-      hover:bg-canvas
-      focus-visible:outline-none
-      focus-visible:ring-2
-      focus-visible:ring-primary/30
-    "
-  >
-    <UserAvatar
-      name={user?.name ?? 'User'}
-      avatarUrl={user?.avatarUrl ?? null}
-    />
+      <div className="mt-auto flex items-center gap-1 border-t border-border p-3">
+        <button
+          type="button"
+          onClick={() => navigate('/settings')}
+          className="
+            flex min-w-0 flex-1 items-center gap-2
+            rounded-md p-1
+            text-left
+            transition-colors
+            hover:bg-canvas
+            focus-visible:outline-none
+            focus-visible:ring-2
+            focus-visible:ring-primary/30
+          "
+        >
+          <UserAvatar
+            name={user?.name ?? 'User'}
+            avatarUrl={user?.avatarUrl ?? null}
+          />
 
-    <div className="min-w-0 flex-1">
-      <p className="truncate text-[10px] font-semibold text-ink">
-        {user?.name ?? 'Loading...'}
-      </p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[10px] font-semibold text-ink">
+              {user?.name ?? 'Loading...'}
+            </p>
 
-      <p className="truncate text-[9px] text-ink/40">
-        {user?.email ?? ''}
-      </p>
-    </div>
+            <p className="truncate text-[9px] text-ink/40">
+              {user?.email ?? ''}
+            </p>
+          </div>
+        </button>
 
-    <span className="text-[10px] text-ink/40">
-      •
-    </span>
-  </button>
-</div>
+        <button
+          type="button"
+          aria-label="Log out"
+          title="Log out"
+          onClick={handleLogout}
+          className="
+            flex size-7 shrink-0 items-center justify-center
+            rounded-md text-ink/40
+            transition-colors
+            hover:bg-canvas hover:text-danger
+            focus-visible:outline-none
+            focus-visible:ring-2
+            focus-visible:ring-primary/30
+          "
+        >
+          <LogOut size={14} strokeWidth={1.7} />
+        </button>
+      </div>
     </aside>
   )
 }

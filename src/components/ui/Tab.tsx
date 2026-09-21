@@ -3,6 +3,9 @@ import type { ReactNode } from 'react'
 export interface TabItem<T extends string> {
   value: T
   label: ReactNode
+  /* Lets a single tab be shown but not selectable. */
+  disabled?: boolean
+  title?: string
 }
 
 interface TabsProps<T extends string> {
@@ -33,7 +36,8 @@ export function Tabs<T extends string>({
             type="button"
             role="tab"
             aria-selected={isActive}
-            disabled={disabled}
+            disabled={disabled || item.disabled}
+            title={item.title}
             onClick={() => onChange(item.value)}
             className={`
               rounded-[5px]

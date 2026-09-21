@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from 'react'
 import {
   format,
   getHours,
@@ -11,6 +12,14 @@ import type { Event } from '../../../lib/api/types'
 import { EventCard } from '../../events/components/EventCard'
 import { getWeekDays } from '../utils/dateUtils'
 import { getEventPosition } from '../utils/eventPosition'
+import { applyDrag, useEventDrag } from '../hooks/useEventDrag'
+
+/*
+ * The grid covers the full day so an event can never be positioned
+ * outside it, but it opens scrolled to the start of the working day
+ * rather than to midnight.
+ */
+const INITIAL_SCROLL_HOUR = 8
 
 interface WeekCalendarProps {
   date: Date
@@ -20,32 +29,69 @@ interface WeekCalendarProps {
   hourHeight?: number
   onTimeSlotClick?: (date: Date) => void
   onEventClick?: (event: Event) => void
+  onEventDrop?: (
+    event: Event,
+    startsAt: string,
+    endsAt: string,
+  ) => void
 }
 
 export function WeekCalendar({
   date,
   events = [],
-  startHour = 8,
+  startHour = 0,
   endHour = 24,
   hourHeight = 80,
   onTimeSlotClick,
   onEventClick,
+  onEventDrop,
 }: WeekCalendarProps) {
   const days = getWeekDays(date)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   const hours = Array.from(
     { length: endHour - startHour },
     (_, index) => startHour + index,
   )
 
+  const getColumnWidth = useCallback(
+    () => (gridRef.current?.clientWidth ?? 0) / days.length,
+    [days.length],
+  )
+
+  const drag = useEventDrag({
+    hourHeight,
+    dayCount: days.length,
+    getColumnWidth,
+    onCommit: (event, startsAt, endsAt) => {
+      onEventDrop?.(event, startsAt, endsAt)
+    },
+  })
+
+  useEffect(() => {
+    const scroller = scrollRef.current
+
+    if (!scroller) {
+      return
+    }
+
+    scroller.scrollTop =
+      Math.max(INITIAL_SCROLL_HOUR - startHour, 0) *
+      hourHeight
+  }, [startHour, hourHeight])
+
   return (
-    <div className="flex-1 overflow-auto bg-canvas">
+    <div
+      ref={scrollRef}
+      className="flex-1 overflow-auto bg-canvas"
+    >
 
         {/* =========================
             DAY HEADER
         ========================== */}
 
-        <div className="ml-[80px] grid grid-cols-7">
+        <div className="sticky top-0 z-30 ml-[80px] grid grid-cols-7 bg-canvas">
           {days.map((day) => {
             const today = isToday(day)
             const weekend = isWeekend(day)
@@ -145,6 +191,7 @@ export function WeekCalendar({
           ========================== */}
 
           <div
+            ref={gridRef}
             className="
               ml-[80px]
               grid
@@ -156,11 +203,21 @@ export function WeekCalendar({
               bg-white
             "
           >
-            {days.map((day) => {
+            {days.map((day, dayIndex) => {
               const today = isToday(day)
 
               const dayEvents = events.filter((event) =>
                 isSameDay(parseISO(event?.startsAt), day),
+              )
+
+              /*
+               * A column holding a dragging event has to outrank its
+               * siblings, or the card slides underneath the days to
+               * its right.
+               */
+              const hasDraggingEvent = dayEvents.some(
+                (event) =>
+                  event.id === drag.preview?.eventId,
               )
 
               return (
@@ -171,6 +228,9 @@ export function WeekCalendar({
                     border-l
                     border-border
                     first:border-l-0
+                    ${
+                      hasDraggingEvent ? 'z-40' : ''
+                    }
                     ${
                       today
                         ? 'bg-primary/[0.018]'
@@ -212,6 +272,25 @@ export function WeekCalendar({
 
                   {/* Events */}
                   {dayEvents.map((event) => {
+                    const isDragging =
+                      drag.preview?.eventId === event.id
+
+                    /*
+                     * While dragging, the card renders the times it
+                     * would land on, so the label tracks the gesture.
+                     */
+                    const displayEvent = isDragging
+                      ? {
+                          ...event,
+                          ...applyDrag(
+                            event,
+                            drag.preview!.mode,
+                            drag.preview!.dayDelta,
+                            drag.preview!.minuteDelta,
+                          ),
+                        }
+                      : event
+
                     const position = getEventPosition({
                       startsAt: event.startsAt,
                       endsAt: event.endsAt,
@@ -224,24 +303,119 @@ export function WeekCalendar({
                       return null
                     }
 
+                    const height = isDragging
+                      ? getEventPosition({
+                          startsAt: displayEvent.startsAt,
+                          endsAt: displayEvent.endsAt,
+                          day,
+                          startHour,
+                          hourHeight,
+                        })?.height ?? position.height
+                      : position.height
+
+                    const offsetX =
+                      isDragging &&
+                      drag.preview!.mode === 'move'
+                        ? drag.preview!.dayDelta *
+                          drag.preview!.columnWidth
+                        : 0
+
+                    const offsetY =
+                      isDragging &&
+                      drag.preview!.mode === 'move'
+                        ? (drag.preview!.minuteDelta / 60) *
+                          hourHeight
+                        : 0
+
                     return (
                       <div
                         key={event.id}
-                        className="
+                        className={`
+                          group
                           absolute
                           left-1
                           right-1
-                          z-10
-                        "
+                          touch-none
+                          ${
+                            isDragging
+                              ? 'z-40 cursor-grabbing opacity-90 drop-shadow-lg'
+                              : 'z-10 cursor-grab'
+                          }
+                        `}
                         style={{
                           top: position.top,
-                          height: position.height,
+                          height,
+                          transform: `translate(${offsetX}px, ${offsetY}px)`,
                         }}
+                        onPointerDown={(pointerEvent) =>
+                          drag.start(
+                            pointerEvent,
+                            event,
+                            dayIndex,
+                            'move',
+                          )
+                        }
+                        onPointerMove={drag.move}
+                        onPointerUp={drag.end}
+                        onPointerCancel={drag.cancel}
+                        onClickCapture={
+                          drag.handleClickCapture
+                        }
                       >
                         <EventCard
-                          event={event}
-                          onClick={onEventClick}
+                          event={displayEvent}
+                          onClick={() =>
+                            onEventClick?.(event)
+                          }
                         />
+
+                        {/* Resize handle */}
+                        <div
+                          role="presentation"
+                          aria-hidden="true"
+                          className="
+                            absolute
+                            -bottom-1
+                            left-1/2
+                            h-2.5
+                            w-8
+                            -translate-x-1/2
+                            cursor-ns-resize
+                            rounded-full
+                          "
+                          onPointerDown={(
+                            pointerEvent,
+                          ) => {
+                            pointerEvent.stopPropagation()
+
+                            drag.start(
+                              pointerEvent,
+                              event,
+                              dayIndex,
+                              'resize',
+                            )
+                          }}
+                        >
+                          <span
+                            className="
+                              pointer-events-none
+                              absolute
+                              left-1/2
+                              top-1/2
+                              h-1
+                              w-6
+                              -translate-x-1/2
+                              -translate-y-1/2
+                              rounded-full
+                              opacity-0
+                              transition-opacity
+                              group-hover:opacity-60
+                            "
+                            style={{
+                              backgroundColor: event.color,
+                            }}
+                          />
+                        </div>
                       </div>
                     )
                   })}

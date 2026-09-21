@@ -19,6 +19,8 @@ interface EventFormProps {
   onDelete?: () => void
   isSubmitting?: boolean
   isDeleting?: boolean
+  /* Surfaced from the mutation so a failed save isn't silent. */
+  error?: string
 }
 
 export function EventForm({
@@ -29,7 +31,10 @@ export function EventForm({
   onDelete,
   isSubmitting = false,
   isDeleting = false,
+  error,
 }: EventFormProps) {
+  const [validationError, setValidationError] =
+    useState('')
   const [title, setTitle] = useState(
     initialValues?.title ?? '',
   )
@@ -63,15 +68,35 @@ export function EventForm({
   ) => {
     event.preventDefault()
 
+    /*
+     * The API rejects a non-positive duration with a 400. Catching
+     * it here costs a round trip and gives a message that points at
+     * the field the user actually needs to change.
+     */
+    if (
+      new Date(endsAt).getTime() <=
+      new Date(startsAt).getTime()
+    ) {
+      setValidationError(
+        'The end time has to be after the start time.',
+      )
+
+      return
+    }
+
+    setValidationError('')
+
     onSubmit({
-      title,
+      title: title.trim(),
       startsAt,
       endsAt,
-      location,
-      description,
+      location: location.trim(),
+      description: description.trim(),
       color,
     })
   }
+
+  const message = validationError || error
 
   return (
     <form
@@ -322,6 +347,16 @@ export function EventForm({
             ),
           )}
         </div>
+
+        {/* Validation / save failure */}
+        {message && (
+          <p
+            role="alert"
+            className="mt-4 text-label text-danger"
+          >
+            {message}
+          </p>
+        )}
 
         {/* Actions */}
         <div className="mt-5 flex items-center justify-between">
